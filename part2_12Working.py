@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-""" THIS PROGRAMME
+""" THIS PROGRAMME compaired to last
+if new ip send time/date to router .. 
+
 1)First prototpe with ospf function
 2)Functions
 3)get ip,data
@@ -28,8 +30,14 @@ import socket
 import re
 import netmiko
 from netmiko import ConnectHandler
+import datetime
 
 def main():
+#
+        routerIPs=['192.168.0.2']
+        print(routerIPs)
+        routerInfo={}
+#        
         syslogTuple = readData()
         syslogData ,syslogAddress = parseData(syslogTuple)
         #printMessageData(syslogData)
@@ -44,8 +52,38 @@ def main():
         facilityCode = findFacilityCode(syslogMsg)
         syslogLevel = findSyslogLevel(syslogMsg)
         mnemonic = findMnemonic(syslogMsg)
-
+#
+        syslogIpAddress = syslogAddress[0]
+        print('!!')
         
+        if syslogIpAddress in routerIPs:
+                print('Existing ip')
+                
+        if syslogIpAddress not in routerIPs:
+                print('new ip')
+                #ADD ROUTER
+                routerIPs.append(syslogIpAddress)
+                e = datetime.datetime.now()
+                monthNbr = e.strftime("%d")
+                print(int(monthNbr.strip()))
+                #monthWord=calendar.month_name[monthNbr]
+                #month_name = datetime_object.strftime("%b")
+                month_name = e.strftime("%b")
+                print("Short name: ",month_name)
+                print (e.strftime("%Y-%m-%d %H:%M:%S"))
+                #Router# clock set 10:50:00 Oct 26 2006
+                print('10:50:00 Oct 26 2006')
+                
+                print (e.strftime("%H:%M:%S %m %d %Y "))#%Y-%m-%d
+                routerDateTime = e.strftime("%H:%M:%S ")+ month_name +e.strftime(" %d %Y ")#%Y-%m-%d 
+                print(routerDateTime)
+                command = "clock set "+routerDateTime
+                print(command)
+                sendCommand(command,syslogIpAddress,'')#
+                print('END')
+
+                #print('/////////\\\\\\\\\\\')
+#        
         #OSPF = isOSPF(facilityCode)#isOspf
         #if OSPF == 'Yes':
         if isOSPF(facilityCode):
@@ -54,6 +92,7 @@ def main():
                 interface = findInterface(syslogMsg)
                 syslogMessage = findSyslogMessage(syslogMsg)
                 syslogIpAddress = syslogAddress[0]
+                
 
 #                if 'Neighbor Down' in syslogMessage:
                 ospfIssue = eventRemedyOspf(syslogMessage,interface,syslogIpAddress)
@@ -69,7 +108,10 @@ def main():
                         if OspfNeighborIp:
                                 print(OspfNeighborIp)
                                 ospfNeighbourIp,ospfNeighbourInterface=OspfNeighbourAddress(OspfNeighborIp)
+                                print('====|||====')
+                                print(ospfNeighbourIp+' '+ospfNeighbourInterface)
                                 sendCommand('no shut',ospfNeighbourIp,ospfNeighbourInterface)#send no shut to this interface
+                                print('====|////\\\\|====')
                         #command = eventRemedyOspf(syslogMessage,interface,syslogIpAddress)
                         
                 else:
@@ -368,7 +410,7 @@ def OspfNeighbourAddress(ospfNeighborIp):
                 
                 neighbourResolutionIp = '192.168.0.2'
                 neighbourResolutionInterface = 'f 0/1'
-                print('# sending neighbour message to' +neighbourResolutionIp+' on '+neighbourResolutionInterface)
+                print('# sending neighbour message to ' +neighbourResolutionIp+' on '+neighbourResolutionInterface)
                 #send noshut to neighbour above
                 #sendCommand('no shut',neighbourResolutionIp,neighbourResolutionInterface)#send no shut to this interface
                 return neighbourResolutionIp,neighbourResolutionInterface
@@ -411,19 +453,31 @@ def sendCommand(command,syslogIpAddress,interface):
         print(syslogIpAddress)
         print(interface)
         #find promt , catch #
-        output =net_connect.send_command("Conf t", expect_string=r"R2")
-        #net_connect.send_command('conf t')
-        print('###sending  '+ 'int '+ interface)
-        output = net_connect.send_command_timing('int '+ interface)#,expect_string =R"R2\(config\)\#")
-        print(output)
-        output =net_connect.send_command_timing(command)#,expect_string =R"R2\(config\)\#")
-        #output =net_connect.send_command('no shut')
-#        print(output)
-        #print('-------------en +'+'conf t ,'+ 'int '+ interface+' , '+command)    
-        print('-------------')
-        net_connect.send_command_timing('end')
-        net_connect.disconnect()
-        print('-------------')
+        #
+        #
+        if interface == '':
+                print('-------///\\\------')
+                print(command)
+                output =net_connect.send_command(command)#, expect_string=r"R2")
+                print(output)
+                net_connect.disconnect()
+                #output =net_connect.send_command_timing(command)#,expect_string =R"R2\(config\)\#")
+                print('-------------')
+                
+        else:        
+                output =net_connect.send_command("Conf t", expect_string=r"R2")
+                #net_connect.send_command('conf t')
+                print('###sending  '+ 'int '+ interface)
+                output = net_connect.send_command_timing('int '+ interface)#,expect_string =R"R2\(config\)\#")
+                print(output)
+                output =net_connect.send_command_timing(command)#,expect_string =R"R2\(config\)\#")
+                #output =net_connect.send_command('no shut')
+        #        print(output)
+                #print('-------------en +'+'conf t ,'+ 'int '+ interface+' , '+command)    
+                print('-------------')
+                net_connect.send_command_timing('end')
+                net_connect.disconnect()
+                print('-------------')
 
         
 # standard boilerplate to call main().
