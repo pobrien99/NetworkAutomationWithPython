@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ THIS PROGRAMME compaired to last
-if new ip send time/date to router .. 
+seperate function to get router int & ip info then storing in dict format
 
 1)First prototpe with ospf function
 2)Functions
@@ -34,7 +34,7 @@ import datetime
 
 def main():
 #
-        routerIPs=['192.168.0.2']
+        routerIPs=[]#'192.168.0.4','192.168.1.1']#'192.168.0.2'
         print(routerIPs)
         routerInfo={}
 #        
@@ -81,7 +81,9 @@ def main():
                 print(command)
                 sendCommand(command,syslogIpAddress,'')#
                 print('END')
-
+                print('\\\\\\\\\///////////')
+                getRouterIpIntInfo(syslogIpAddress,routerInfo)
+                print(routerInfo)
                 #print('/////////\\\\\\\\\\\')
 #        
         #OSPF = isOSPF(facilityCode)#isOspf
@@ -111,6 +113,7 @@ def main():
                                 print('====|||====')
                                 print(ospfNeighbourIp+' '+ospfNeighbourInterface)
                                 sendCommand('no shut',ospfNeighbourIp,ospfNeighbourInterface)#send no shut to this interface
+                                #getRouterIpIntInfo('no shut',ospfNeighbourIp,ospfNeighbourInterface)
                                 print('====|////\\\\|====')
                         #command = eventRemedyOspf(syslogMessage,interface,syslogIpAddress)
                         
@@ -431,8 +434,8 @@ def OspfNeighbourAddress(ospfNeighborIp):
                 #sendCommand('no shut',neighbourResolutionIp,neighbourResolutionInterface)#send no shut to this interface
                 return neighbourResolutionIp,neighbourResolutionInterface                
 
-def sendCommand(command,syslogIpAddress,interface):
-#def sendCommand():
+def getRouterIpIntInfo(syslogIpAddress,routerInfo):
+        #routerInfo={}
         #print('-------------en conf t , int ='+interface+' ,cmd= '+command + ',ip = ' + syslogIpAddress)
         iosv_l2 = {
         'device_type': 'cisco_ios',
@@ -448,13 +451,88 @@ def sendCommand(command,syslogIpAddress,interface):
         # Call 'enable()' method to elevate privileges
         net_connect.enable()
 
-        output =net_connect.send_command('show ip int brief')
-        print(output)
+        showIpIntBr =net_connect.send_command('show ip int brief')
+        
+        print(type(showIpIntBr))
+        print(showIpIntBr)
+        print(',,,,,,,,,')
+        showIpIntBrSplit = showIpIntBr.split('\n')
+        intBriefLenght = len(showIpIntBrSplit)
+        x=1
+        while x < intBriefLenght:
+                print(showIpIntBrSplit[x])
+                intBrLineSplit = showIpIntBrSplit[x].split()
+                print(intBrLineSplit)
+                #intBrLineSplit[0] contains interface,intBrLineSplit[1] contains ip
+                routerInfo[intBrLineSplit[0]]=intBrLineSplit[1]
+                print(routerInfo)
+                print('here5')
+                #routerInfo.update({"R2": [intBrLineSplit[0],intBrLineSplit[1]]})
+                x+=1
+                print(routerInfo[intBrLineSplit[0]])
+                print('here6')
+        #routerInfo R1:['f0/0','192.168.1.3'],['f0/1','192.168.1.2']        
+        #print(syslogIpAddress)
+        #print(interface)
+        #find promt , catch #
+        #
+#        NeighborIpRegex2 = re.search("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",showIpIntBr)
+        #if(ospfNeighborIpRegex != ''):
+#        if NeighborIpRegex2 :
+#                #ospfNeighborIp=ospfNeighborIpRegex[0].strip("['-")
+#                ospfNeighborIp2=NeighborIpRegex2.group()
+#                print('#### '+NeighborIpRegex2.group())
+
+
+def sendCommand(command,syslogIpAddress,interface):
+
+#def sendCommand():
+        #routerInfo={}
+        #print('-------------en conf t , int ='+interface+' ,cmd= '+command + ',ip = ' + syslogIpAddress)
+        iosv_l2 = {
+        'device_type': 'cisco_ios',
+       'ip':   syslogIpAddress.strip(),
+#        'ip':   '192.168.0.55',
+        'username': 'admin',
+        'password': 'cisco',
+#        'secret': 'class',
+        'secret': 'cisco',
+        }
+        net_connect =ConnectHandler(**iosv_l2)
+        print('####  SSHING TO '+syslogIpAddress +' ####')
+        # Call 'enable()' method to elevate privileges
+        net_connect.enable()
+
+        showIpIntBr =net_connect.send_command('show ip int brief')
+        
+#        print(type(showIpIntBr))
+#        print(showIpIntBr)
+        print(',,,,,,,,,')
+#        showIpIntBrSplit = showIpIntBr.split('\n')
+#        intBriefLenght = len(showIpIntBrSplit)
+#        x=1
+#        while x < intBriefLenght:
+#                print(showIpIntBrSplit[x])
+#                intBrLineSplit = showIpIntBrSplit[x].split()
+#                print(intBrLineSplit)
+                #intBrLineSplit[0] contains interface,intBrLineSplit[1] contains ip
+                #routerInfo['R2']+=[intBrLineSplit[0],intBrLineSplit[1]]
+                #routerInfo.update({"R2": [intBrLineSplit[0],intBrLineSplit[1]]})
+#                x+=1
+                #print(routerInfo['R2'])
+        #routerInfo R1:['f0/0','192.168.1.3'],['f0/1','192.168.1.2']        
         print(syslogIpAddress)
         print(interface)
         #find promt , catch #
         #
-        #
+#        NeighborIpRegex2 = re.search("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}",showIpIntBr)
+        #if(ospfNeighborIpRegex != ''):
+#        if NeighborIpRegex2 :
+                #ospfNeighborIp=ospfNeighborIpRegex[0].strip("['-")
+#                ospfNeighborIp2=NeighborIpRegex2.group()
+#                print('#### '+NeighborIpRegex2.group())
+        
+       #
         if interface == '':
                 print('-------///\\\------')
                 print(command)
